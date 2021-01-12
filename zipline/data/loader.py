@@ -18,18 +18,20 @@ from collections import OrderedDict
 
 import logbook
 
-import constants
+# import constants
 
 import pandas as pd
-from pandas.io.data import DataReader
+# from pandas.io.data import DataReader
 import pytz
+import tushare
+# from pandas_datareader import DataReader
 
 from six import iteritems
 from six.moves.urllib_error import HTTPError
 
 from . benchmarks import get_benchmark_returns
-from .mongodb import LoadDataCVS
-from . import treasuries, treasuries_can
+# from .mongodb import LoadDataCVS
+from . import treasuries, treasuries_can, constants
 from .paths import (
     cache_root,
     data_root,
@@ -54,6 +56,8 @@ INDEX_MAPPING = {
 
 ONE_HOUR = pd.Timedelta(hours=1)
 
+TOKEN = "fd5215f68ccfdb78256ad3e26611d5eb1e23fba1215ed321f8109c7d"
+tushare_api = tushare.pro_api(token=TOKEN)
 
 def last_modified_time(path):
     """
@@ -300,6 +304,10 @@ def ensure_treasury_data(bm_symbol, first_date, last_date, now):
     return data
 
 
+def getstockdaily(stock, start, end):
+    result = tushare_api.daily(ts_code=stock, start_date=start, end_date=end)
+    return result
+
 
 def load_data(indexes=None,stockList=None,start=None,end=None,adjusted=True):
     """
@@ -321,26 +329,28 @@ must specify stockList or indexes"""
     data = OrderedDict()
 
 
-    l=LoadDataCVS(constants.IP,constants.PORT)
-    l.Conn()
+    # l=LoadDataCVS(constants.IP,constants.PORT)
+    # l.Conn()
 
-    if stockList=="hs300" or stockList=="zz500" or stockList=="sz50" or stockList=="all":
-        stocks=l.getstocklist(stockList)
-    else:
-        stocks=stockList
-    
+    # if stockList=="hs300" or stockList=="zz500" or stockList=="sz50" or stockList=="all":
+    #     stocks=l.getstocklist(stockList)
+    # else:
+    #     stocks=stockList
+    stocks=stockList
+
     #print stocks
 
     if stocks is not None:
         for stock in stocks:
-            stkd= l.getstockdaily(stock,start,end)
+            # stkd= l.getstockdaily(stock,start,end)
+            stkd= getstockdaily(stock, start, end)
             data[stock] = stkd
 
-    if indexes is not None:
-        for name, ticker in iteritems(indexes):
-            logger.info('Loading index: {} ({})'.format(name, ticker))
-            stkd= l.getindexdaily(indexes,start,end)
-            data[name] = stkd
+    # if indexes is not None:
+    #     for name, ticker in iteritems(indexes):
+    #         logger.info('Loading index: {} ({})'.format(name, ticker))
+    #         stkd= l.getindexdaily(indexes,start,end)
+    #         data[name] = stkd
 
 
     panel = pd.Panel(data)
@@ -349,16 +359,16 @@ must specify stockList or indexes"""
     
 
     #close the connection
-    l.Close()
+    # l.Close()
 
     # Adjust data
-    if adjusted:
-        adj_cols = ['open', 'high', 'low', 'close']
-        for ticker in panel.items:
-            ratio = (panel[ticker]['price'] / panel[ticker]['close'])
-            ratio_filtered = ratio.fillna(0).values
-            for col in adj_cols:
-                panel[ticker][col] *= ratio_filtered
+    # if adjusted:
+    #     adj_cols = ['open', 'high', 'low', 'close']
+    #     for ticker in panel.items:
+    #         ratio = (panel[ticker]['price'] / panel[ticker]['close'])
+    #         ratio_filtered = ratio.fillna(0).values
+    #         for col in adj_cols:
+    #             panel[ticker][col] *= ratio_filtered
 
     return panel
 

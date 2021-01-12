@@ -26,9 +26,9 @@ from pandas import DataFrame
 
 class LoadDataCVS:
 
-    basedir="/home/zipline/zipline"
-    stockdata=basedir+"/stock data"
-    indexdata=basedir+"/index data"
+    basedir="E:\\Downloads\\trading-data"
+    stockdata=os.path.join(basedir, "stock-data")
+    indexdata=os.path.join(basedir, "index-data")
 
     #treasurvity 
     in_package_data = range(2002, 2017)
@@ -43,7 +43,7 @@ class LoadDataCVS:
 
     ## connect to the data base
     def Conn(self):
-        self.client = pymongo.MongoClient(self.ip,self.port)
+        self.client = pymongo.MongoClient("mongodb://root:root@vm")
         self.connection=self.client.stock #storage stock information
         self.index=self.client.index #storage index
         self.pool=self.client.pool  #storate pool
@@ -58,16 +58,15 @@ class LoadDataCVS:
     #store data information into database, do not always call this
     def storagedaily(self):
         #get the filelist
-        onlyfiles = [ f for f in listdir(self.stockdata) if isfile(join(self.stockdata,f)) ]
+        onlyfiles = [f for f in listdir(self.stockdata) if isfile(join(self.stockdata,f)) ]
         #read from using pandas
         for f in onlyfiles:
-            df = pd.read_csv(self.stockdata+"/"+f)
+            df = pd.read_csv(os.path.join(self.stockdata, f))
             s=f.split('.')
             name = s[0][2:8]
             records = json.loads(df.T.to_json()).values()
             for row in records:
                 row['date'] = datetime.datetime.strptime(row['date'], "%Y-%m-%d")
-            print name
             self.connection[name].insert_many(records)
             
     #store index information into database,do not always call this
@@ -77,13 +76,12 @@ class LoadDataCVS:
         onlyfiles = [ f for f in listdir(self.indexdata) if isfile(join(self.indexdata,f)) ]
         #read from using pandas
         for f in onlyfiles:
-            df = pd.read_csv(self.indexdata+"/"+f)
+            df = pd.read_csv(os.path.join(self.indexdata, f))
             s=f.split('.')
             name = s[0][2:8]
             records = json.loads(df.T.to_json()).values()
             for row in records:
                 row['date'] = datetime.datetime.strptime(row['date'], "%Y-%m-%d")
-            print name
             self.index[name].insert_many(records)
             
     
@@ -100,7 +98,7 @@ class LoadDataCVS:
         df=ts.get_sz50s()
         self.pool['sz'].insert_many(json.loads(df.to_json(orient='records')))
         #st
-        df=ts.get_st_classified()
+        df=ts.pro_api(token="fd5215f68ccfdb78256ad3e26611d5eb1e23fba1215ed321f8109c7d")
         self.pool['st'].insert_many(json.loads(df.to_json(orient='records')))
         
         
@@ -220,10 +218,10 @@ class LoadDataCVS:
         basedir = os.path.join(os.path.dirname(__file__), "xlsx")
 
         for i in in_package_data:
-            dfs.append(pd.read_excel(os.path.join(basedir, "%d.xlsx" % i)))
+            dfs.append(pd.read_excel(os.path.join(basedir, "%d.xlsx" % i), engine="openpyxl"))
 
         for memfile in fetched_data:
-            dfs.append(pd.read_excel(memfile))
+            dfs.append(pd.read_excel(memfile, engine="openpyxl"))
 
         df = pd.concat(dfs)
 
@@ -291,18 +289,17 @@ class LoadDataCVS:
         frame = DataFrame(data)
         
         self.pool['all'].insert_many(json.loads(frame.to_json(orient='records')))
-        print frame
-            
+
         
 
 if __name__ == '__main__':
-    l=LoadDataCVS('127.0.0.1',27017)
-    # l.Conn()
+    l=LoadDataCVS('vm',27017)
+    l.Conn()
     # l.storagedaily()
     # l.storageindex()
-    # l.storagepool()
+    l.storagepool()
     # l.storageStockName()
-    l.insert_zipline_treasure_format()
+    # l.insert_zipline_treasure_format()
     
     #l.storageStockName()
     #print l.getstocklist('all')

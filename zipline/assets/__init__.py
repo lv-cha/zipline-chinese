@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ._assets import (
+from zipline.assets._assets import (
     Asset,
     Equity,
     Future,

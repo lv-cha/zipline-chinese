@@ -14,9 +14,9 @@ mpl.rcParams['font.sans-serif'] = ['SimHei']
 mpl.rcParams['axes.unicode_minus'] = False
 
 input_data = load_data(
-    stockList=['002057'],
-    start="2015-11-04",
-    end="2016-01-16"
+    stockList=['000001'],
+    start="2017-01-01",
+    end="2018-01-01"
 )
 def analyze(context=None, results=None):
     import matplotlib.pyplot as plt

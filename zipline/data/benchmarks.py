@@ -16,9 +16,8 @@ import pandas as pd
 
 from six.moves.urllib_parse import urlencode
 
-import constants
-
-from .mongodb import LoadDataCVS
+from . import constants
+# from .mongodb import LoadDataCVS
 
 
 
