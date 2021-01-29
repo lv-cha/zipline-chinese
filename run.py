@@ -9,7 +9,7 @@ from zipline.api import order, sid, get_datetime
 from zipline.data.loader import load_data
 from zipline.api import order_target, record, symbol, history, add_history,symbol,set_commission,order_percent,set_long_only,get_open_orders
 from zipline.finance.commission import OrderCost
-from pylab import *
+from pylab import mpl
 mpl.rcParams['font.sans-serif'] = ['SimHei']
 mpl.rcParams['axes.unicode_minus'] = False
 
@@ -18,6 +18,8 @@ input_data = load_data(
     start="2017-01-01",
     end="2018-01-01"
 )
+
+
 def analyze(context=None, results=None):
     import matplotlib.pyplot as plt
 
@@ -32,34 +34,41 @@ def analyze(context=None, results=None):
     plt.show()
 
 
-
 def initialize(context):
     context.has_ordered = False
-    set_commission(OrderCost(open_tax=0,close_tax=0.001,open_commission=0.0003,close_commission=0.0003,close_today_commission=0,min_commission=5))
+    set_commission(OrderCost(open_tax=0, close_tax=0.001,open_commission=0.0003, close_commission=0.0003,close_today_commission=0,min_commission=5))
     set_long_only()
+
 
 def handle_data(context, data):
 
-    #输出每天持仓情况
-
+    # 输出每天持仓情况
     if not context.has_ordered:
+
         for stock in data:
             closeprice=history(5,'1d','close')
-            #-2:昨天,-3 前天.-4 大前天
-            print(get_datetime(),closeprice[sid(stock)][0],closeprice[sid(stock)][1],closeprice[sid(stock)][2],closeprice[sid(stock)][3],closeprice[sid(stock)][4])
-            if closeprice[sid(stock)][-2]>closeprice[sid(stock)][-3] and closeprice[sid(stock)][-3]>closeprice[sid(stock)][-4]:
-                print("buy",get_datetime())
+            # -2:昨天,-3 前天.-4 大前天
+            print(
+                get_datetime(),
+                closeprice[sid(stock)][0],
+                closeprice[sid(stock)][1],
+                closeprice[sid(stock)][2],
+                closeprice[sid(stock)][3],
+                closeprice[sid(stock)][4]
+            )
+
+            if closeprice[sid(stock)][-2] > closeprice[sid(stock)][-3] \
+                    and closeprice[sid(stock)][-3] > closeprice[sid(stock)][-4]:
+                print("buy", get_datetime())
                 order(stock, 300)
-            elif closeprice[sid(stock)][-2]<closeprice[sid(stock)][-3] and closeprice[sid(stock)][-3]<closeprice[sid(stock)][-4]:
+            elif closeprice[sid(stock)][-2] < closeprice[sid(stock)][-3] and closeprice[sid(stock)][-3] < \
+                    closeprice[sid(stock)][-4]:
                 print("sell",get_datetime())
                 order(stock, -300)
 
 
-algo = TradingAlgorithm(initialize=initialize, handle_data=handle_data,capital_base=10000,benchmark='399004')
-
-
-
-results = algo.run(input_data)
-print(results)
-analyze(results=results)
-
+if __name__ == "__main__":
+    algo = TradingAlgorithm(initialize=initialize, handle_data=handle_data, capital_base=10000, benchmark='399004')
+    results = algo.run(input_data)
+    print(results)
+    analyze(results=results)
